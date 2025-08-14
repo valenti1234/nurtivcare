@@ -231,6 +231,7 @@ export function PatientPhotoUpload({
                 width={300}
                 height={300}
                 className="rounded-lg object-cover w-full h-64"
+                priority
               />
               {!currentPhoto.verified && (
                 <div className="absolute top-2 right-2">

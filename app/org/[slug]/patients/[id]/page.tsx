@@ -13,6 +13,7 @@ import { PatientPhotoUpload } from '@/components/patient-photo-upload';
 import { PatientLocation } from '@/components/patient-location';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 
 interface Patient {
@@ -252,7 +253,20 @@ export default function PatientDetailPage({
               </span>
             </div>
           </div>
-          <User className="h-10 w-10 text-teal-600" />
+          {patient.photo?.url ? (
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-teal-600">
+              <Image 
+                src={patient.photo.url} 
+                alt={`${patient.firstName} ${patient.lastName}`}
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
+          ) : (
+            <User className="h-10 w-10 text-teal-600" />
+          )}
         </div>
       </header>
 
@@ -285,7 +299,20 @@ export default function PatientDetailPage({
         {/* Desktop Header */}
         <div className="hidden lg:block p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <User className="h-8 w-8 text-teal-600" />
+            {patient.photo?.url ? (
+              <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-teal-600">
+                <Image 
+                  src={patient.photo.url} 
+                  alt={`${patient.firstName} ${patient.lastName}`}
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                  priority
+                />
+              </div>
+            ) : (
+              <User className="h-8 w-8 text-teal-600" />
+            )}
             <div>
               <h2 className="font-semibold text-gray-900">
                 {patient.firstName} {patient.lastName}
@@ -298,7 +325,20 @@ export default function PatientDetailPage({
         {/* Mobile Header */}
         <div className="lg:hidden p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <User className="h-8 w-8 text-teal-600" />
+            {patient.photo?.url ? (
+              <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-teal-600">
+                <Image 
+                  src={patient.photo.url} 
+                  alt={`${patient.firstName} ${patient.lastName}`}
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                  priority
+                />
+              </div>
+            ) : (
+              <User className="h-8 w-8 text-teal-600" />
+            )}
             <div>
               <h2 className="font-semibold text-gray-900">
                 {patient.firstName} {patient.lastName}
@@ -426,6 +466,89 @@ export default function PatientDetailPage({
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Key Information Card - Moved to top */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Key Information</CardTitle>
+                  <CardDescription>Important details and contacts</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <strong className="text-sm">Allergies:</strong>
+                    <p className="text-sm text-gray-600">{patient.keyInfo.allergies}</p>
+                  </div>
+                  <div>
+                    <strong className="text-sm">Emergency Contact:</strong>
+                    <p className="text-sm text-gray-600">{patient.keyInfo.emergencyContact}</p>
+                  </div>
+                  <div>
+                    <strong className="text-sm">GP:</strong>
+                    <p className="text-sm text-gray-600">{patient.keyInfo.gp}</p>
+                  </div>
+                  <div>
+                    <strong className="text-sm">Conditions:</strong>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {patient.keyInfo.conditions.map((condition: string, index: number) => (
+                        <Badge key={index} variant="outline">{condition}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Care Plan Card - Moved to top */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Care Plan</CardTitle>
+                  <CardDescription>Current care requirements and routine</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-3 font-medium text-gray-700">Care Category</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-700">Details</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {patient.carePlan.split('.').filter(item => item.trim()).map((item, index) => {
+                          const trimmedItem = item.trim();
+                          if (!trimmedItem) return null;
+                          
+                          // Try to identify category and details
+                          let category = 'General Care';
+                          let details = trimmedItem;
+                          
+                          if (trimmedItem.toLowerCase().includes('meal') || trimmedItem.toLowerCase().includes('food')) {
+                            category = 'Nutrition';
+                          } else if (trimmedItem.toLowerCase().includes('medication') || trimmedItem.toLowerCase().includes('medicine')) {
+                            category = 'Medication';
+                          } else if (trimmedItem.toLowerCase().includes('mobility') || trimmedItem.toLowerCase().includes('physiotherapy')) {
+                            category = 'Mobility & Therapy';
+                          } else if (trimmedItem.toLowerCase().includes('housekeeping') || trimmedItem.toLowerCase().includes('cleaning')) {
+                            category = 'Household Support';
+                          } else if (trimmedItem.toLowerCase().includes('shopping') || trimmedItem.toLowerCase().includes('grocery')) {
+                            category = 'Shopping & Errands';
+                          } else if (trimmedItem.toLowerCase().includes('personal care') || trimmedItem.toLowerCase().includes('hygiene')) {
+                            category = 'Personal Care';
+                          } else if (trimmedItem.toLowerCase().includes('social') || trimmedItem.toLowerCase().includes('companionship')) {
+                            category = 'Social Support';
+                          }
+                          
+                          return (
+                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="py-3 px-3 font-medium text-gray-800">{category}</td>
+                              <td className="py-3 px-3 text-gray-600">{details}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Photo Upload Card */}
               <Card>
                 <CardHeader>
@@ -547,86 +670,6 @@ export default function PatientDetailPage({
                   </Button>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Care Plan</CardTitle>
-                  <CardDescription>Current care requirements and routine</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-3 font-medium text-gray-700">Care Category</th>
-                          <th className="text-left py-2 px-3 font-medium text-gray-700">Details</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {patient.carePlan.split('.').filter(item => item.trim()).map((item, index) => {
-                          const trimmedItem = item.trim();
-                          if (!trimmedItem) return null;
-                          
-                          // Try to identify category and details
-                          let category = 'General Care';
-                          let details = trimmedItem;
-                          
-                          if (trimmedItem.toLowerCase().includes('meal') || trimmedItem.toLowerCase().includes('food')) {
-                            category = 'Nutrition';
-                          } else if (trimmedItem.toLowerCase().includes('medication') || trimmedItem.toLowerCase().includes('medicine')) {
-                            category = 'Medication';
-                          } else if (trimmedItem.toLowerCase().includes('mobility') || trimmedItem.toLowerCase().includes('physiotherapy')) {
-                            category = 'Mobility & Therapy';
-                          } else if (trimmedItem.toLowerCase().includes('housekeeping') || trimmedItem.toLowerCase().includes('cleaning')) {
-                            category = 'Household Support';
-                          } else if (trimmedItem.toLowerCase().includes('shopping') || trimmedItem.toLowerCase().includes('grocery')) {
-                            category = 'Shopping & Errands';
-                          } else if (trimmedItem.toLowerCase().includes('personal care') || trimmedItem.toLowerCase().includes('hygiene')) {
-                            category = 'Personal Care';
-                          } else if (trimmedItem.toLowerCase().includes('social') || trimmedItem.toLowerCase().includes('companionship')) {
-                            category = 'Social Support';
-                          }
-                          
-                          return (
-                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="py-3 px-3 font-medium text-gray-800">{category}</td>
-                              <td className="py-3 px-3 text-gray-600">{details}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Key Information</CardTitle>
-                  <CardDescription>Important details and contacts</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <strong className="text-sm">Allergies:</strong>
-                    <p className="text-sm text-gray-600">{patient.keyInfo.allergies}</p>
-                  </div>
-                  <div>
-                    <strong className="text-sm">Emergency Contact:</strong>
-                    <p className="text-sm text-gray-600">{patient.keyInfo.emergencyContact}</p>
-                  </div>
-                  <div>
-                    <strong className="text-sm">GP:</strong>
-                    <p className="text-sm text-gray-600">{patient.keyInfo.gp}</p>
-                  </div>
-                  <div>
-                    <strong className="text-sm">Conditions:</strong>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {patient.keyInfo.conditions.map((condition: string, index: number) => (
-                        <Badge key={index} variant="outline">{condition}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </TabsContent>
 
@@ -725,6 +768,7 @@ export default function PatientDetailPage({
                 // Handle transcription result
               }}
               disabled={false}
+              orgSlug={params.slug}
             />
           </TabsContent>
 

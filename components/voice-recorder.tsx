@@ -9,12 +9,14 @@ interface VoiceRecorderProps {
   onRecordingComplete: (audioBlob: Blob) => void;
   onUploadComplete?: (result: any) => void;
   disabled?: boolean;
+  orgSlug: string;
 }
 
 export function VoiceRecorder({ 
   onRecordingComplete, 
   onUploadComplete, 
-  disabled 
+  disabled,
+  orgSlug 
 }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -82,30 +84,73 @@ export function VoiceRecorder({
   };
 
   const uploadRecording = async () => {
-    if (!audioBlob) return;
+    if (!audioBlob) {
+      console.warn('🚫 Upload attempted but no audio blob available');
+      return;
+    }
+    
+    console.log('🚀 Starting audio upload', {
+      orgSlug,
+      audioBlobSize: audioBlob.size,
+      audioBlobType: audioBlob.type,
+      timestamp: new Date().toISOString()
+    });
     
     setIsUploading(true);
     
     try {
+      console.log('📦 Creating form data...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       
-      const response = await fetch('/api/audio/transcribe', {
+      const uploadUrl = `/api/org/${orgSlug}/audio/transcribe`;
+      console.log('📡 Sending request to:', uploadUrl);
+      
+      const startTime = Date.now();
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
       });
+      const uploadTime = Date.now() - startTime;
+      
+      console.log('📥 Response received', {
+        status: response.status,
+        statusText: response.statusText,
+        uploadTimeMs: uploadTime,
+        ok: response.ok
+      });
       
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorText = await response.text();
+        console.error('❌ Upload failed with response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
       }
       
+      console.log('🔄 Parsing response JSON...');
       const result = await response.json();
+      
+      console.log('✅ Upload and transcription successful', {
+        transcriptLength: result.transcript?.length || 0,
+        durationSeconds: result.durationSeconds,
+        preview: result.transcript?.substring(0, 50) + (result.transcript?.length > 50 ? '...' : '')
+      });
+      
       onUploadComplete?.(result);
       
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error occurred:', {
+        error: error instanceof Error ? error.message : String(error),
+        orgSlug,
+        audioBlobSize: audioBlob.size,
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setIsUploading(false);
+      console.log('🏁 Upload process completed');
     }
   };
 
