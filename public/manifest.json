@@ -1,0 +1,41 @@
+{
+  "name": "Nurtiv - AI Care Assistant",
+  "short_name": "Nurtiv",
+  "description": "AI-powered assistant for social carers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d9488",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["healthcare", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Patients",
+      "short_name": "Patients",
+      "description": "View patient list",
+      "url": "/patients",
+      "icons": [{"src": "/icon-192x192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Record Note",
+      "short_name": "Record",
+      "description": "Record a voice note",
+      "url": "/record",
+      "icons": [{"src": "/icon-192x192.png", "sizes": "192x192"}]
+    }
+  ]
+}
