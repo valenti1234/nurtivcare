@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Calendar, FileText, Mic, Brain, Globe, Heart, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Calendar, FileText, Mic, Brain, Globe, Heart, Trash2, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VoiceRecorder } from '@/components/voice-recorder';
 import { AddNoteDialog } from '@/components/add-note-dialog';
 import { PatientTodos } from '@/components/patient-todos';
+import { PatientPhotoUpload } from '@/components/patient-photo-upload';
+import { PatientLocation } from '@/components/patient-location';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +26,18 @@ interface Patient {
   lastAnalyzed?: string;
   analysisReasoning?: string;
   analysisRecommendations?: string[];
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+    radius?: number;
+  };
+  photo?: {
+    url: string;
+    filename: string;
+    uploadedAt: string;
+    verified: boolean;
+  };
   keyInfo: {
     allergies: string;
     emergencyContact: string;
@@ -57,6 +71,7 @@ export default function PatientDetailPage({
   const [familyUpdate, setFamilyUpdate] = useState('');
   const [quickBrief, setQuickBrief] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { toast } = useToast();
 
   // Fetch patient data from API
@@ -222,50 +237,232 @@ export default function PatientDetailPage({
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4 mb-4">
+    <div className="min-h-screen bg-gray-50 lg:flex">
+      {/* Header - Mobile Only */}
+      <header className="lg:hidden bg-white border-b border-gray-200 pl-16 pr-4 py-4 relative z-30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              {patient.firstName} {patient.lastName}
+            </h1>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                Age {age}
+              </span>
+            </div>
+          </div>
+          <User className="h-10 w-10 text-teal-600" />
+        </div>
+      </header>
+
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed top-6 left-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="bg-white shadow-lg"
+        >
+          {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        </Button>
+      </div>
+
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50
+        lg:translate-x-0 lg:static lg:w-72 lg:shadow-none lg:border-r lg:border-gray-200 lg:flex-shrink-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        {/* Desktop Header */}
+        <div className="hidden lg:block p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <User className="h-8 w-8 text-teal-600" />
+            <div>
+              <h2 className="font-semibold text-gray-900">
+                {patient.firstName} {patient.lastName}
+              </h2>
+              <p className="text-sm text-gray-600">Age {age} • Born {format(new Date(patient.dob), 'MMM d, yyyy')}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mobile Header */}
+        <div className="lg:hidden p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <User className="h-8 w-8 text-teal-600" />
+            <div>
+              <h2 className="font-semibold text-gray-900">
+                {patient.firstName} {patient.lastName}
+              </h2>
+              <p className="text-sm text-gray-600">Age {age}</p>
+            </div>
+          </div>
+        </div>
+        
+        <nav className="p-4">
+          <div className="mb-4 pb-4 border-b border-gray-200">
             <Link href={`/org/${params.slug}/patients`}>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="w-full justify-start">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Patients
               </Button>
             </Link>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <User className="h-10 w-10 text-teal-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {patient.firstName} {patient.lastName}
-              </h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Age {age} • Born {format(new Date(patient.dob), 'MMM d, yyyy')}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+          <ul className="space-y-2">
+            <li>
+              <button
+                onClick={() => {
+                  setActiveTab('overview');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  activeTab === 'overview' 
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <User className="h-5 w-5" />
+                <span>Overview</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {
+                  setActiveTab('notes');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  activeTab === 'notes' 
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <FileText className="h-5 w-5" />
+                <span>Notes</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {
+                  setActiveTab('todos');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  activeTab === 'todos' 
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Calendar className="h-5 w-5" />
+                <span>To-Do</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {
+                  setActiveTab('record');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  activeTab === 'record' 
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Mic className="h-5 w-5" />
+                <span>Record</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {
+                  setActiveTab('brief');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  activeTab === 'brief' 
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Brain className="h-5 w-5" />
+                <span>Quick Brief</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {
+                  setActiveTab('family');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  activeTab === 'family' 
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Heart className="h-5 w-5" />
+                <span>Family Update</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="todos">To-Do</TabsTrigger>
-            <TabsTrigger value="record">Record</TabsTrigger>
-            <TabsTrigger value="brief">Quick Brief</TabsTrigger>
-            <TabsTrigger value="family">Family Update</TabsTrigger>
-          </TabsList>
+      <main className="flex-1 lg:overflow-hidden">
+        <div className="h-full lg:overflow-y-auto">
+          <div className="p-4 lg:p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Photo Upload Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-blue-600" />
+                    Patient Photo
+                  </CardTitle>
+                  <CardDescription>Upload photo for ID verification</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PatientPhotoUpload 
+                    patientId={params.id} 
+                    orgSlug={params.slug}
+                    currentPhoto={patient.photo}
+                    onPhotoUpdate={fetchPatientData}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Location Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-green-600" />
+                    Patient Location
+                  </CardTitle>
+                  <CardDescription>Set location for carer shift matching</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PatientLocation 
+                    patientId={params.id} 
+                    orgSlug={params.slug}
+                    currentLocation={patient.location}
+                    onLocationUpdate={fetchPatientData}
+                  />
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -607,6 +804,8 @@ export default function PatientDetailPage({
             </Card>
           </TabsContent>
         </Tabs>
+          </div>
+        </div>
       </main>
     </div>
   );

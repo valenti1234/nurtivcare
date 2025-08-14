@@ -19,6 +19,18 @@ export interface IPatient extends Document {
   emergencyContact?: string;
   gp?: string;
   lastVisit?: Date;
+  photo?: {
+    url: string;
+    filename: string;
+    uploadedAt: Date;
+    verified?: boolean;
+  };
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+    radius?: number; // in meters, for matching carer shifts
+  };
 }
 
 const patientSchema = new Schema<IPatient>({
@@ -38,7 +50,19 @@ const patientSchema = new Schema<IPatient>({
   allergies: { type: String },
   emergencyContact: { type: String },
   gp: { type: String },
-  lastVisit: { type: Date }
+  lastVisit: { type: Date },
+  photo: {
+    url: { type: String },
+    filename: { type: String },
+    uploadedAt: { type: Date },
+    verified: { type: Boolean, default: false }
+  },
+  location: {
+    latitude: { type: Number },
+    longitude: { type: Number },
+    address: { type: String },
+    radius: { type: Number, default: 100 } // default 100 meters
+  }
 });
 
 patientSchema.index({ slug: 1, lastName: 1 });

@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
     
+    // Location-based search parameters
+    const lat = searchParams.get('lat');
+    const lng = searchParams.get('lng');
+    const maxDistance = parseInt(searchParams.get('maxDistance') || '5000'); // 5km default
+    
     let filter = createOrgFilter(slug);
     
     if (search) {
@@ -29,6 +34,44 @@ export async function GET(request: NextRequest) {
           { firstName: { $regex: search, $options: 'i' } },
           { lastName: { $regex: search, $options: 'i' } }
         ]
+      };
+    }
+    
+    // Add location filter if coordinates provided
+    if (lat && lng) {
+      filter = {
+        ...filter,
+        'location.latitude': { $exists: true },
+        'location.longitude': { $exists: true },
+        $expr: {
+          $lte: [
+            {
+              $multiply: [
+                6371000, // Earth's radius in meters
+                {
+                  $acos: {
+                    $add: [
+                      {
+                        $multiply: [
+                          { $sin: { $multiply: [{ $degreesToRadians: '$location.latitude' }, 1] } },
+                          { $sin: { $multiply: [{ $degreesToRadians: parseFloat(lat) }, 1] } }
+                        ]
+                      },
+                      {
+                        $multiply: [
+                          { $cos: { $multiply: [{ $degreesToRadians: '$location.latitude' }, 1] } },
+                          { $cos: { $multiply: [{ $degreesToRadians: parseFloat(lat) }, 1] } },
+                          { $cos: { $multiply: [{ $degreesToRadians: { $subtract: ['$location.longitude', parseFloat(lng)] } }, 1] } }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            maxDistance
+          ]
+        }
       };
     }
     

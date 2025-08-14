@@ -45,17 +45,31 @@ export function PatientCard({ patient, orgSlug }: PatientCardProps) {
     const riskLevel = patient.riskLevel;
     const urgentActions = patient.urgentActions || 0;
     
-    if (!riskLevel) {
-      return { level: 'Not Analyzed', color: 'bg-gray-400', textColor: 'text-gray-700', bgColor: 'bg-gray-50' };
+    // If AI has analyzed the patient, prioritize AI risk level
+    if (riskLevel) {
+      if (riskLevel === 'high') {
+        return { level: 'High', color: 'bg-red-500', textColor: 'text-red-700', bgColor: 'bg-red-50' };
+      }
+      if (riskLevel === 'medium') {
+        return { level: 'Medium', color: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' };
+      }
+      if (riskLevel === 'low') {
+        return { level: 'Low', color: 'bg-green-500', textColor: 'text-green-700', bgColor: 'bg-green-50' };
+      }
     }
     
-    if (riskLevel === 'high' || urgentActions > 3) {
+    // Fallback to urgent actions count if no AI analysis
+    if (urgentActions > 3) {
       return { level: 'High', color: 'bg-red-500', textColor: 'text-red-700', bgColor: 'bg-red-50' };
     }
-    if (riskLevel === 'medium' || urgentActions > 1) {
+    if (urgentActions > 1) {
       return { level: 'Medium', color: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' };
     }
-    return { level: 'Low', color: 'bg-green-500', textColor: 'text-green-700', bgColor: 'bg-green-50' };
+    if (urgentActions > 0) {
+      return { level: 'Low', color: 'bg-green-500', textColor: 'text-green-700', bgColor: 'bg-green-50' };
+    }
+    
+    return { level: 'Not Analyzed', color: 'bg-gray-400', textColor: 'text-gray-700', bgColor: 'bg-gray-50' };
   };
 
   // Get status badge info

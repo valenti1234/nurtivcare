@@ -8,6 +8,7 @@ import { PatientCard } from '@/components/patient-card';
 import { OfflineStatus } from '@/components/offline-status';
 import { OrgSwitcher } from '@/components/org-switcher';
 import { UserMenu } from '@/components/user-menu';
+import { OrgNavigation } from '@/components/org-navigation';
 import { useSession } from 'next-auth/react';
 
 interface Patient {
@@ -164,6 +165,7 @@ export default function PatientsPage({ params }: { params: { slug: string } }) {
             {session?.user?.role !== 'CARER' && (
               <OrgSwitcher currentOrg={currentOrg} organizations={mockOrgs} />
             )}
+            <OrgNavigation orgSlug={params.slug} userRole={session?.user?.role} />
             <OfflineStatus />
           </div>
           
